@@ -1,0 +1,53 @@
+Room Type,Ideal Area per Person (sq ft),Ideal Windows
+Bedroom,50,2
+Master Bedroom,70,1
+Guest Room,45,2
+Living Room,40,3
+Dining,35,2
+Dining Room,35,2
+Kitchen,30,1
+Bathroom,20,1
+Ensuite,25,1
+Walk-in Closet,15,1
+Laundry Room,25,1
+Pantry,10,1
+Storage Room,15,0
+Utility Room,20,1
+Balcony,10,0
+Hallway,10,1
+Entry,15,1
+Foyer,20,1
+Sitting Room,35,1
+Family Room,45,3
+Study Room,30,2
+Home Office,35,1
+Library,40,2
+Game Room,60,1
+Home Theater,90,1
+Gym Room,80,1
+Mudroom,20,1
+Garage,100,0
+Carport,80,1
+Basement,100,1
+Attic,60,1
+Sunroom,30,4
+Playroom,40,2
+Music Room,45,1
+Art Studio,50,1
+Wine Cellar,30,1
+Workshop,55,2
+Sauna,25,1
+Prayer Room,20,1
+Craft Room,35,1
+Greenhouse,45,1
+Terrace,30,0
+Deck,25,1
+Porch,20,1
+Front Porch,20,1
+Backyard Patio,30,1
+Pool Room,120,1
+Changing Room,20,1
+Security Room,15,1
+Server Room,15,1
+Conference Room,60,1
+Reception Area,50,1

@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Floor Plan Optimizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.3/dist/panzoom.min.js"></script>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #10b981;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #94a3b8;
+            --accent: #8b5cf6;
+            --accent-light: #a78bfa;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--dark);
+            color: white;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .upload-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            background-color: white;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+        }
+
+        .upload-box {
+            width: 100%;
+            border: 2px dashed var(--gray);
+            border-radius: 0.5rem;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-box:hover {
+            border-color: var(--primary);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--gray);
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.25rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn:disabled {
+            background-color: var(--gray);
+            cursor: not-allowed;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .preview-container {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .image-viewer {
+            width: 48%;
+            height: 500px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            background-color: #f1f5f9;
+        }
+
+        .image-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.2s ease;
+        }
+
+        .viewer-controls {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 0.5rem;
+            border-radius: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .viewer-title {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            z-index: 10;
+        }
+
+        .loading-preview {
+            width: 48%;
+            height: 500px;
+            border-radius: 0.5rem;
+            position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .gradient-bg {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 5s ease infinite;
+        }
+
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border: 8px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        .status-text {
+            margin-top: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .results-container {
+            margin-top: 3rem;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--dark);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+
+        .results-header div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .results-header h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .results-header p {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .charts-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            width: 100%;
+        }
+
+        .chart-box {
+            width: 48%;
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+        }
+
+        .suggestions-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            width: 100%;
+        }
+
+        .suggestion-box {
+            width: calc(33.33% - 1.33rem);
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+        }
+
+        .suggestion-box h3 {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary-dark);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .suggestion-box ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .suggestion-box li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .suggestion-box li:before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .score-item {
+            background-color: #f1f5f9;
+            border-radius: 0.25rem;
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .score-item p:first-child {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--primary-dark);
+        }
+
+        .score-item p:last-child {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+
+            .image-viewer,
+            .loading-preview {
+                width: 100%;
+            }
+
+            .chart-box {
+                width: 100%;
+            }
+
+            .suggestion-box {
+                width: 100%;
+            }
+
+            .results-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>AI Floor Plan Optimizer</h1>
+    </header>
+
+    <div class="container">
+        <div class="upload-container">
+            <div class="upload-box" id="uploadBox">
+                <div class="upload-icon">📁</div>
+                <h2>Upload Floor Plan Image</h2>
+                <p>Click or drag and drop your floor plan image here</p>
+                <input type="file" id="fileInput" accept="image/*" class="hidden">
+            </div>
+
+            <button id="uploadBtn" class="btn" disabled>Process Floor Plan</button>
+
+            <div class="preview-container hidden" id="previewContainer">
+                <div class="image-viewer">
+                    <div class="viewer-title">Original Floor Plan</div>
+                    <div class="image-container" id="originalImageContainer">
+                        <img id="originalImage" src="#" alt="Original Floor Plan">
+                    </div>
+                    <div class="viewer-controls">
+                        <button class="btn btn-sm btn-outline" id="zoomInOriginal">+</button>
+                        <button class="btn btn-sm btn-outline" id="zoomOutOriginal">-</button>
+                        <button class="btn btn-sm btn-outline" id="resetOriginal">Reset</button>
+                    </div>
+                </div>
+
+                <div class="loading-preview" id="loadingPreview">
+                    <div class="gradient-bg"></div>
+                    <div class="loading-spinner"></div>
+                </div>
+
+                <div class="image-viewer hidden" id="optimizedViewer">
+                    <div class="viewer-title">Room Detection</div>
+                    <div class="image-container" id="optimizedImageContainer">
+                        <img id="optimizedImage" src="#" alt="Optimized Floor Plan">
+                    </div>
+                    <div class="viewer-controls">
+                        <button class="btn btn-sm btn-outline" id="zoomInOptimized">+</button>
+                        <button class="btn btn-sm btn-outline" id="zoomOutOptimized">-</button>
+                        <button class="btn btn-sm btn-outline" id="resetOptimized">Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <p class="status-text hidden" id="statusText">Optimizing your floor plan...</p>
+        </div>
+
+        <div class="results-container hidden" id="resultsContainer">
+            <div class="results-header">
+                <div>
+                    <h3>Floor Area</h3>
+                    <p id="floorArea">527 sq ft</p>
+                </div>
+                <div>
+                    <h3>Overall Score</h3>
+                    <p id="overallScore">96.0</p>
+                </div>
+            </div>
+
+            <h2>Average Scores</h2>
+            <div class="score-grid" id="averageScores">
+                <!-- Average scores will be populated here -->
+            </div>
+
+            <div class="charts-container">
+                <div class="chart-box">
+                    <h3>Room Scores Comparison</h3>
+                    <canvas id="barChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3>Room Performance Analysis</h3>
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+
+            <h2>Improvement Suggestions</h2>
+            <div class="suggestions-container" id="suggestionsContainer">
+                <!-- Suggestions will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const uploadBox = document.getElementById('uploadBox');
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const previewContainer = document.getElementById('previewContainer');
+            const originalImage = document.getElementById('originalImage');
+            const originalImageContainer = document.getElementById('originalImageContainer');
+            const loadingPreview = document.getElementById('loadingPreview');
+            const optimizedViewer = document.getElementById('optimizedViewer');
+            const optimizedImage = document.getElementById('optimizedImage');
+            const optimizedImageContainer = document.getElementById('optimizedImageContainer');
+            const statusText = document.getElementById('statusText');
+            const resultsContainer = document.getElementById('resultsContainer');
+
+            // Zoom controls
+            const zoomInOriginal = document.getElementById('zoomInOriginal');
+            const zoomOutOriginal = document.getElementById('zoomOutOriginal');
+            const resetOriginal = document.getElementById('resetOriginal');
+            const zoomInOptimized = document.getElementById('zoomInOptimized');
+            const zoomOutOptimized = document.getElementById('zoomOutOptimized');
+            const resetOptimized = document.getElementById('resetOptimized');
+
+            // Panzoom instances
+            let originalPanzoom, optimizedPanzoom;
+
+            // Handle click on upload box
+            uploadBox.addEventListener('click', function () {
+                fileInput.click();
+            });
+
+            // Handle drag and drop
+            uploadBox.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                uploadBox.style.borderColor = 'var(--primary)';
+            });
+
+            uploadBox.addEventListener('dragleave', function () {
+                uploadBox.style.borderColor = 'var(--gray)';
+            });
+
+            uploadBox.addEventListener('drop', function (e) {
+                e.preventDefault();
+                uploadBox.style.borderColor = 'var(--gray)';
+
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileSelect();
+                }
+            });
+
+            // Handle file selection
+            fileInput.addEventListener('change', handleFileSelect);
+
+            function handleFileSelect() {
+                if (fileInput.files.length === 0) return;
+
+                const file = fileInput.files[0];
+
+                // Check if the file is an image
+                if (!file.type.match('image.*')) {
+                    alert('Please select an image file.');
+                    return;
+                }
+
+                // Enable upload button
+                uploadBtn.disabled = false;
+
+                // Display image preview
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    originalImage.src = e.target.result;
+                    uploadBox.style.borderColor = 'var(--secondary)';
+
+                    // Initialize panzoom after image loads
+                    originalImage.onload = function () {
+                        initOriginalPanzoom();
+                    };
+                }
+                reader.readAsDataURL(file);
+            }
+
+            function initOriginalPanzoom() {
+                // Destroy previous instance if exists
+                if (originalPanzoom) {
+                    originalPanzoom.dispose();
+                }
+
+                // Initialize panzoom
+                originalPanzoom = panzoom(originalImageContainer, {
+                    bounds: true,
+                    boundsPadding: 0.1,
+                    maxZoom: 5,
+                    minZoom: 0.5,
+                    initialZoom: 1
+                });
+
+                // Set up zoom controls
+                zoomInOriginal.addEventListener('click', function () {
+                    originalPanzoom.zoom(1.2, { animate: true });
+                });
+
+                zoomOutOriginal.addEventListener('click', function () {
+                    originalPanzoom.zoom(0.8, { animate: true });
+                });
+
+                resetOriginal.addEventListener('click', function () {
+                    originalPanzoom.zoomTo(1, 0, 0);
+                    originalPanzoom.moveTo(0, 0);
+                });
+            }
+
+            function initOptimizedPanzoom() {
+                // Destroy previous instance if exists
+                if (optimizedPanzoom) {
+                    optimizedPanzoom.dispose();
+                }
+
+                // Initialize panzoom
+                optimizedPanzoom = panzoom(optimizedImageContainer, {
+                    bounds: true,
+                    boundsPadding: 0.1,
+                    maxZoom: 5,
+                    minZoom: 0.5,
+                    initialZoom: 1
+                });
+
+                // Set up zoom controls
+                zoomInOptimized.addEventListener('click', function () {
+                    optimizedPanzoom.zoom(1.2, { animate: true });
+                });
+
+                zoomOutOptimized.addEventListener('click', function () {
+                    optimizedPanzoom.zoom(0.8, { animate: true });
+                });
+
+                resetOptimized.addEventListener('click', function () {
+                    optimizedPanzoom.zoomTo(1, 0, 0);
+                    optimizedPanzoom.moveTo(0, 0);
+                });
+            }
+
+            // Handle upload button click
+            uploadBtn.addEventListener('click', function () {
+                uploadFloorPlan();
+            });
+
+            // function uploadFloorPlan() {
+            //     if (fileInput.files.length === 0) return;
+
+            //     const file = fileInput.files[0];
+            //     const formData = new FormData();
+            //     formData.append('file', file);
+
+            //     // Show preview container and status text
+            //     previewContainer.classList.remove('hidden');
+            //     statusText.classList.remove('hidden');
+            //     statusText.textContent = "Uploading floor plan...";
+
+            //     // Make sure loading preview is visible and optimized preview is hidden
+            //     loadingPreview.style.display = 'flex';
+            //     optimizedViewer.classList.add('hidden');
+
+            //     // Disable upload button while processing
+            //     uploadBtn.disabled = true;
+
+            //     // First, upload the file to the server
+            //     fetch('http://127.0.0.1:5001/upload', {
+            //         method: 'POST',
+            //         body: formData
+            //     })
+            //         .then(response => {
+            //             if (!response.ok) {
+            //                 throw new Error('Network response was not ok');
+            //             }
+            //             return response.json();
+            //         })
+            //         .then(uploadData => {
+            //             console.log('File uploaded successfully:', uploadData);
+            //             statusText.textContent = "Analyzing floor plan...";
+
+            //             // Now analyze the uploaded floor plan
+            //             return fetch('http://127.0.0.1:5001/analyze', {
+            //                 method: 'POST',
+            //                 headers: {
+            //                     'Content-Type': 'application/json'
+            //                 },
+            //                 body: JSON.stringify({
+            //                     filepath: uploadData.filepath,
+            //                     wall_thickness: 15,
+            //                     max_door_width: 40,
+            //                     max_border_distance: 20,
+            //                     min_distance: 20,
+            //                     max_distance: 200,
+            //                     max_diff: 4
+            //                 })
+            //             });
+            //         })
+            //         .then(response => {
+            //             if (!response.ok) {
+            //                 throw new Error('Analysis response was not ok');
+            //             }
+            //             return response.json();
+            //         })
+            //         .then(analysisData => {
+            //             console.log('Analysis completed:', analysisData);
+
+            //             if (analysisData.combined_visualization && analysisData.combined_visualization.image_path) {
+            //                 loadingPreview.style.display = 'none';
+            //                 optimizedViewer.classList.remove('hidden');
+                            
+
+            //                 // Check if the path already includes the server URL
+            //                 let imagePath = analysisData.combined_visualization.image_path;
+            //                 if (!imagePath.startsWith('http')) {
+            //                     imagePath = `http://127.0.0.1:5001/output/${imagePath}`;
+            //                 }
+
+            //                 // Add timestamp to prevent caching
+            //                 optimizedImage.src = `http://127.0.0.1:5001/output/custom_output.png`;
+
+            //                 optimizedImage.onload = function () {
+            //                     initOptimizedPanzoom();
+            //                 };
+
+            //                 optimizedImage.onerror = function () {
+            //                     console.error('Failed to load optimized image');
+            //                     statusText.textContent = 'Error loading optimized image';
+            //                     statusText.style.color = 'var(--danger)';
+            //                 };
+            //             } else {
+            //                 // If no visualization was provided, show an error
+            //                 loadingPreview.style.display = 'none';
+            //                 statusText.textContent = 'Optimization complete, but no visualization available';
+            //             }
+
+            //             // Process the API response directly
+            //             processAPIResponse(analysisData);
+
+            //             // Update status
+            //             statusText.textContent = 'Floor plan optimized successfully!';
+            //             statusText.style.color = 'var(--secondary)';
+            //         })
+            //         .catch(error => {
+            //             console.error('Error:', error);
+            //             statusText.textContent = 'Error: ' + error.message;
+            //             statusText.style.color = 'var(--danger)';
+
+            //             // Hide loading preview on error
+            //             loadingPreview.style.display = 'none';
+            //         });
+            // }
+
+            function uploadFloorPlan() {
+                if (fileInput.files.length === 0) return;
+
+                const file = fileInput.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                // Get number of occupants
+                const occupants = parseInt(occupantsInput.value) || 2;
+
+                // Update occupant count in results
+                document.getElementById('occupantCount').textContent = occupants;
+
+                // Show preview container and status text
+                previewContainer.classList.remove('hidden');
+                statusText.classList.remove('hidden');
+                statusText.textContent = "Uploading floor plan...";
+
+                // Make sure loading preview is visible and optimized preview is hidden
+                loadingPreview.style.display = 'flex';
+                optimizedViewer.classList.add('hidden');
+
+                // Disable upload button while processing
+                uploadBtn.disabled = true;
+
+                // First, upload the file to the server
+                fetch('http://127.0.0.1:5001/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(uploadData => {
+                        console.log('File uploaded successfully:', uploadData);
+                        statusText.textContent = "Analyzing floor plan...";
+
+                        // Now analyze the uploaded floor plan with occupants parameter
+                        return fetch('http://127.0.0.1:5001/analyze', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                filepath: uploadData.filepath,
+                                wall_thickness: 15,
+                                max_door_width: 40,
+                                max_border_distance: 20,
+                                min_distance: 20,
+                                max_distance: 200,
+                                max_diff: 4,
+                                occupants: occupants // Add the occupants parameter
+                            })
+                        });
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Analysis response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(analysisData => {
+                        console.log('Analysis completed:', analysisData);
+
+                        if (analysisData.combined_visualization && analysisData.combined_visualization.image_path) {
+                            loadingPreview.style.display = 'none';
+                            optimizedViewer.classList.remove('hidden');
+
+                            // Check if the path already includes the server URL
+                            let imagePath = analysisData.combined_visualization.image_path;
+                            if (!imagePath.startsWith('http')) {
+                                imagePath = `http://127.0.0.1:5001/output/${imagePath}`;
+                            }
+
+                            // Add timestamp to prevent caching
+                            optimizedImage.src = `http://127.0.0.1:5001/output/custom_output.png`;
+
+                            optimizedImage.onload = function () {
+                                initOptimizedPanzoom();
+                            };
+
+                            optimizedImage.onerror = function () {
+                                console.error('Failed to load optimized image');
+                                statusText.textContent = 'Error loading optimized image';
+                                statusText.style.color = 'var(--danger)';
+                            };
+                        } else {
+                            // If no visualization was provided, show an error
+                            loadingPreview.style.display = 'none';
+                            statusText.textContent = 'Optimization complete, but no visualization available';
+                        }
+
+                        // Process the API response directly
+                        processAPIResponse(analysisData);
+
+                        // Update status
+                        statusText.textContent = 'Floor plan optimized successfully!';
+                        statusText.style.color = 'var(--secondary)';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        statusText.textContent = 'Error: ' + error.message;
+                        statusText.style.color = 'var(--danger)';
+
+                        // Hide loading preview on error
+                        loadingPreview.style.display = 'none';
+                    });
+            }
+
+            // Process API response
+            function processAPIResponse(analysisData) {
+                // Make sure we have valid data
+                if (!analysisData || typeof analysisData !== 'object') {
+                    console.error('Invalid analysis data received:', analysisData);
+                    statusText.textContent = 'Error: Invalid data received from server';
+                    statusText.style.color = 'var(--danger)';
+                    return;
+                }
+
+                // Display results container
+                resultsContainer.classList.remove('hidden');
+
+                // Extract key data points from API response
+                const floorArea = analysisData.total_floor_area || 0;
+                const overallScore = analysisData.average_scores?.["Overall Score"] || 0;
+                const averageScores = analysisData.average_scores || {};
+                const roomScores = analysisData.individual_room_scores || [];
+
+                // Update floor area and overall score
+                document.getElementById('floorArea').textContent = floorArea + " sq ft";
+                document.getElementById('overallScore').textContent = overallScore.toFixed(1);
+
+                // Populate average scores
+                const averageScoresContainer = document.getElementById('averageScores');
+                averageScoresContainer.innerHTML = '';
+
+                // Only display these four specific metrics in the average scores section
+                const displayMetrics = ["Space Utilization", "Accessibility", "Lighting & Ventilation", "Functional Layout"];
+
+                displayMetrics.forEach(key => {
+                    if (key in averageScores) {
+                        const scoreItem = document.createElement('div');
+                        scoreItem.classList.add('score-item');
+                        scoreItem.innerHTML = `
+                <p>${key}</p>
+                <p>${averageScores[key].toFixed(1)}</p>
+            `;
+                        averageScoresContainer.appendChild(scoreItem);
+                    }
+                });
+
+                // Create bar chart with room scores
+                createBarChart(roomScores);
+
+                // Create radar chart with room details
+                createRadarChart(roomScores);
+
+                // Generate suggestions based on scores
+                const suggestions = generateSuggestions(roomScores);
+
+                // Populate suggestions
+                const suggestionsContainer = document.getElementById('suggestionsContainer');
+                suggestionsContainer.innerHTML = '';
+
+                suggestions.forEach(item => {
+                    const suggestionBox = document.createElement('div');
+                    suggestionBox.classList.add('suggestion-box');
+
+                    const suggestionList = document.createElement('ul');
+                    item.suggestions.forEach(suggestion => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = suggestion;
+                        suggestionList.appendChild(listItem);
+                    });
+
+                    suggestionBox.innerHTML = `<h3>${item.roomType}</h3>`;
+                    suggestionBox.appendChild(suggestionList);
+                    suggestionsContainer.appendChild(suggestionBox);
+                });
+            }
+
+            // Helper function to generate suggestions based on room scores
+            function generateSuggestions(roomScores) {
+                return roomScores.map(room => {
+                    const suggestions = [];
+
+                    // Space Utilization suggestions
+                    if (room["Space Utilization"] >= 90) {
+                        suggestions.push("Excellent space utilization. Maintain the current layout.");
+                    } else if (room["Space Utilization"] >= 70) {
+                        suggestions.push("Good space utilization. Consider minor furniture rearrangements.");
+                    } else if (room["Space Utilization"] > 0) {
+                        suggestions.push("Space utilization needs improvement. Consider optimizing the layout and removing unnecessary items.");
+                    } else {
+                        suggestions.push("Space utilization needs significant improvement. Re-evaluate the room's purpose and layout.");
+                    }
+
+                    // Accessibility suggestions
+                    if (room["Accessibility"] >= 90) {
+                        suggestions.push("Excellent accessibility. Maintain the current standard.");
+                    } else if (room["Accessibility"] >= 70) {
+                        suggestions.push("Good accessibility. Consider improving traffic flow in high-use areas.");
+                    } else if (room["Accessibility"] > 0) {
+                        suggestions.push("Accessibility needs improvement. Ensure pathways are clear and doorways are accessible.");
+                    } else {
+                        suggestions.push("Accessibility needs significant improvement. Consider restructuring doorways and pathways.");
+                    }
+
+                    // Lighting & Ventilation suggestions
+                    if (room["Lighting & Ventilation"] >= 90) {
+                        suggestions.push("Outstanding lighting & ventilation. No improvements needed.");
+                    } else if (room["Lighting & Ventilation"] >= 50) {
+                        suggestions.push("Good lighting & ventilation. Consider adding more light sources.");
+                    } else if (room["Lighting & Ventilation"] > 0) {
+                        suggestions.push("Lighting & ventilation need improvement. Consider adding windows or artificial light sources.");
+                    } else {
+                        suggestions.push("Lighting & ventilation need significant improvement. Consider adding windows, skylights, or ventilation systems.");
+                    }
+
+                    // Functional Layout suggestions
+                    if (room["Functional Layout"] >= 90) {
+                        suggestions.push("Excellent layout. Provides functionality and aesthetics.");
+                    } else if (room["Functional Layout"] >= 70) {
+                        suggestions.push("Good layout. Minor adjustments could improve functionality.");
+                    } else {
+                        suggestions.push("Layout needs improvement. Consider rearranging for better flow and functionality.");
+                    }
+
+                    return {
+                        roomType: room["Room Type"],
+                        suggestions: suggestions
+                    };
+                });
+            }
+
+            // Create bar chart function using actual API data
+            function createBarChart(data) {
+                const roomTypes = data.map(item => item["Room Type"]);
+                const totalScores = data.map(item => item["Total Score"]);
+
+                const ctx = document.getElementById('barChart').getContext('2d');
+
+                // Destroy previous chart if it exists
+                if (window.barChart instanceof Chart) {
+                    window.barChart.destroy();
+                }
+
+                window.barChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: roomTypes,
+                        datasets: [{
+                            label: 'Total Score',
+                            data: totalScores,
+                            backgroundColor: [
+                                'rgba(59, 130, 246, 0.7)',
+                                'rgba(16, 185, 129, 0.7)',
+                                'rgba(139, 92, 246, 0.7)',
+                                'rgba(239, 68, 68, 0.7)',
+                                'rgba(245, 158, 11, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(59, 130, 246, 1)',
+                                'rgba(16, 185, 129, 1)',
+                                'rgba(139, 92, 246, 1)',
+                                'rgba(239, 68, 68, 1)',
+                                'rgba(245, 158, 11, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Create radar chart function using actual API data
+            function createRadarChart(data) {
+                const categories = ["Space Utilization", "Accessibility", "Lighting & Ventilation", "Functional Layout"];
+
+                const datasets = [];
+                const colors = [
+                    { bg: 'rgba(59, 130, 246, 0.2)', border: 'rgba(59, 130, 246, 1)' },
+                    { bg: 'rgba(16, 185, 129, 0.2)', border: 'rgba(16, 185, 129, 1)' },
+                    { bg: 'rgba(139, 92, 246, 0.2)', border: 'rgba(139, 92, 246, 1)' },
+                    { bg: 'rgba(239, 68, 68, 0.2)', border: 'rgba(239, 68, 68, 1)' },
+                    { bg: 'rgba(245, 158, 11, 0.2)', border: 'rgba(245, 158, 11, 1)' }
+                ];
+
+                data.forEach((room, index) => {
+                    datasets.push({
+                        label: room["Room Type"],
+                        data: [
+                            room["Space Utilization"],
+                            room["Accessibility"],
+                            room["Lighting & Ventilation"],
+                            room["Functional Layout"]
+                        ],
+                        backgroundColor: colors[index % colors.length].bg,
+                        borderColor: colors[index % colors.length].border,
+                        borderWidth: 2
+                    });
+                });
+
+                const ctx = document.getElementById('radarChart').getContext('2d');
+
+                // Destroy previous chart if it exists
+                if (window.radarChart instanceof Chart) {
+                    window.radarChart.destroy();
+                }
+
+                window.radarChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: categories,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    display: false
+                                }
+                            }
+                        },
+                        elements: {
+                            line: {
+                                tension: 0.3
+                            }
+                        }
+                    }
+                });
+            }
+});
+    </script>
+</body>
+
+</html>
