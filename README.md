@@ -15,15 +15,16 @@ Floor Plan Optimizer is a tool that takes a floor plan image as input and evalua
 - Visual output: annotated floor plans with scores and feedback.
 
 # Running
-
 1. Start the Flask backend:
    
-      cd backend
-      python app.py
-     
-2. Launch the frontend:
 
-   - Open UploadUI.HTML in your browser.
+       cd backend
+
+       python app.py
+
+2. Launch the frontend:
+   
+       Open UploadUI.HTML in your browser.
      
 3. Interact with the App:
    - Upload a floor plan image.
@@ -31,3 +32,17 @@ Floor Plan Optimizer is a tool that takes a floor plan image as input and evalua
    - View room-wise and overall scores with recommendations.
    - Output visuals will be generated and displayed.
 
+
+# Output and Visualizations
+   - Annotated floor plan with detected rooms and boundaries.
+   - Visual indicators of windows and area.
+   - Scorecards for each room and total floor plan.
+   - Textual suggestions to improve design.
+     
+# Architecture Standards
+
+   - Stored in: 
+       
+            backend/ideal_room_area_per_person_with_windows.csv
+      
+   - Contains room size, occupant standards, and window requirements.
